@@ -38,7 +38,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.1"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -68,7 +68,7 @@ gem "json", "~> 2.7"
 gem "aasm"                      # state machine de Post e LandingPage
 gem "sidekiq"                   # jobs (substitui solid_queue)
 gem "sidekiq-cron"              # gatilhos recorrentes
-gem "image_processing", "~> 1.2" # libvips: redimensionamento
+gem "image_processing", "~> 2.1" # libvips: redimensionamento
 gem "ruby_llm", "1.16.0"        # camada de LLM multi-provedor
 gem "rack-attack"               # rate limit nos formulários públicos
 gem "faraday"                   # clientes HTTP (Meta, Telegram, clima)

@@ -1,0 +1,35 @@
+<% housing = @project.property? %>
+<h1>Nova campanha — <%= @project.name %></h1>
+
+<% if housing %>
+  <aside>
+    <h2>Anúncio de imóvel: segmentação restrita pela Meta</h2>
+    <p>A Meta classifica anúncios de imóveis como <strong>Special Ad Category (HOUSING)</strong>,
+       o que desativa boa parte da segmentação. Os campos abaixo estão bloqueados por
+       exigência da plataforma, não por decisão deste sistema:</p>
+    <ul>
+      <li>Idade e gênero: indisponíveis</li>
+      <li>Raio geográfico: mínimo de 25 km</li>
+      <li>CEP, bairro e públicos semelhantes (lookalike): indisponíveis</li>
+    </ul>
+    <p>Na prática, o retorno virá da qualidade do criativo, não do público.</p>
+  </aside>
+<% end %>
+
+<%= form_with model: [@project, @campaign] do |f| %>
+  <%= f.label :name %> <%= f.text_field :name %>
+  <%= f.label :daily_budget_cents, "Orçamento diário (centavos)" %>
+  <%= f.number_field :daily_budget_cents %>
+
+  <%= f.label :ad_targeting_id, "Público" %>
+  <%= f.collection_select :ad_targeting_id, @targetings, :id, :name, include_blank: "Brasil (amplo)" %>
+
+  <fieldset <%= "disabled" if housing %>>
+    <legend>Segmentação fina <%= "(bloqueada para imóveis)" if housing %></legend>
+    <label>Idade mínima <input type="number" disabled="<%= housing %>"></label>
+    <label>Gênero <select disabled="<%= housing %>"><option>Todos</option></select></label>
+  </fieldset>
+
+  <p><strong>A campanha será criada PAUSADA.</strong> Nada é gasto até você ativá-la.</p>
+  <%= f.submit "Criar campanha pausada" %>
+<% end %>

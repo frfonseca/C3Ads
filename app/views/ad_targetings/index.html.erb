@@ -1,0 +1,6 @@
+<h1>Públicos — <%= @project.name %></h1>
+<ul>
+  <% @targetings.each do |t| %>
+    <li><%= t.name %> — raio <%= t.radius_km || "país" %> km</li>
+  <% end %>
+</ul>

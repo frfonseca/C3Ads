@@ -331,6 +331,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["kind", "resolved_at"], name: "index_system_alerts_on_kind_and_resolved_at"
   end
 
+  create_table "video_renders", force: :cascade do |t|
+    t.bigint "asset_id"
+    t.datetime "created_at", null: false
+    t.integer "duration_seconds"
+    t.text "error_message"
+    t.bigint "post_id", null: false
+    t.jsonb "spec"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_video_renders_on_asset_id"
+    t.index ["post_id"], name: "index_video_renders_on_post_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "asset_collection_memberships", "asset_collections"
@@ -365,4 +378,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "publish_attempts", "posts"
   add_foreign_key "short_links", "destinations"
   add_foreign_key "short_links", "posts"
+  add_foreign_key "video_renders", "assets"
+  add_foreign_key "video_renders", "posts"
 end

@@ -1,0 +1,46 @@
+pt-BR:
+  activerecord:
+    models:
+      project: Projeto
+      brand: Marca
+      asset: Material
+      post: Publicação
+      account: Conta
+    attributes:
+      brand:
+        primary_color: Cor principal
+        secondary_color: Cor secundária
+        accent_color: Cor de destaque
+        text_color: Cor do texto
+        background_color: Cor de fundo
+        heading_font: Fonte dos títulos
+        body_font: Fonte do texto
+        tone_of_voice: Tom de voz
+        signature: Assinatura
+        watermark_posts: Marca d'água nos posts
+      asset:
+        kind: Tipo
+        visibility: Visibilidade
+        title: Título
+        notes: Observações
+        tags: Etiquetas
+        expires_at: Expira em
+      project:
+        name: Nome
+        kind: Tipo
+        description: Descrição
+        whatsapp_number: WhatsApp
+      post:
+        caption: Legenda
+        hashtags: Hashtags
+        scheduled_for: Agendado para
+  helpers:
+    submit:
+      create: Criar %{model}
+      update: Salvar %{model}
+  date:
+    formats:
+      default: "%d/%m/%Y"
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M"

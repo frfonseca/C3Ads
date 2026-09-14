@@ -1,0 +1,20 @@
+<h1>Biblioteca — <%= @project.name %></h1>
+
+<%= form_with url: project_assets_path(@project), method: :post, multipart: true do |f| %>
+  <%= file_field_tag "files[]", multiple: true %>
+  <%= select_tag :kind, options_for_select(Asset::KINDS, "photo") %>
+  <%= f.submit "Enviar" %>
+<% end %>
+
+<ul>
+  <% @assets.each do |asset| %>
+    <li>
+      <strong><%= asset.title %></strong>
+      <small><%= asset.kind %> · <%= asset.visibility %> · usado <%= asset.usage_count %>x</small>
+      <%= form_with model: asset, url: project_asset_path(@project, asset), method: :patch do |f| %>
+        <%= f.select :visibility, Asset::VISIBILITIES %>
+        <%= f.submit "Salvar" %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

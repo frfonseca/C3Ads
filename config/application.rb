@@ -25,6 +25,7 @@ module C3Ads
 
     config.active_job.queue_adapter = :sidekiq
     config.time_zone = "America/Sao_Paulo"
+    config.i18n.available_locales = [ :"pt-BR", :en ]
     config.i18n.default_locale = :"pt-BR"
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do

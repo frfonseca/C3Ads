@@ -1,0 +1,42 @@
+<h1>Marca — <%= @project.name %></h1>
+
+<%= form_with model: @brand, url: project_brand_path(@project), method: :patch do |f| %>
+  <fieldset>
+    <legend>Cores</legend>
+    <% %i[primary_color secondary_color accent_color text_color background_color].each do |field| %>
+      <%= f.label field %> <%= f.color_field field %>
+    <% end %>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tipografia</legend>
+    <%= f.label :heading_font %> <%= f.text_field :heading_font %>
+    <%= f.label :body_font %> <%= f.text_field :body_font %>
+  </fieldset>
+
+  <fieldset>
+    <legend>Voz</legend>
+    <%= f.label :tone_of_voice, "Tom de voz" %>
+    <%= f.text_area :tone_of_voice, rows: 3 %>
+
+    <%= label_tag :do_say_text, "Prefira mencionar (um por linha)" %>
+    <%= text_area_tag "brand[do_say_text]", @brand.do_say.join("\n"), rows: 4 %>
+
+    <%= label_tag :dont_say_text, "Nunca usar (um por linha)" %>
+    <%= text_area_tag "brand[dont_say_text]", @brand.dont_say.join("\n"), rows: 4 %>
+
+    <%= f.label :signature, "Assinatura / CTA padrão" %>
+    <%= f.text_field :signature %>
+  </fieldset>
+
+  <%= f.submit "Salvar" %>
+<% end %>
+
+<h2>Prévia</h2>
+<div style="<%= @brand.css_variables_style %> background: var(--brand-background); color: var(--brand-text); padding: 1rem;">
+  <h3 style="font-family: var(--brand-heading-font); color: var(--brand-primary);">Título de exemplo</h3>
+  <p style="font-family: var(--brand-body-font);">Assim o texto da página vai aparecer.</p>
+  <span style="background: var(--brand-accent); color: #fff; padding: .4rem .8rem;">
+    <%= @brand.signature.presence || "Fale conosco" %>
+  </span>
+</div>

@@ -1,0 +1,8 @@
+<main class="wrap">
+  <h1>Esta oferta terminou</h1>
+  <p>A promoção desta página não está mais válida.</p>
+  <% permanente = @page.project.landing_pages.permanent.live.first %>
+  <% if permanente %>
+    <a class="cta" href="https://<%= permanente.host %>">Ver a página de <%= @page.project.name %></a>
+  <% end %>
+</main>

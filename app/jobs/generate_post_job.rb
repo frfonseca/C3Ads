@@ -8,6 +8,7 @@ class GeneratePostJob < ApplicationJob
   def perform(post_id, context: nil, feedback: nil)
     post = Post.find(post_id)
     return unless post.may_start_generation?
+    return if cost_limit_reached?(post)
 
     post.start_generation!
 
@@ -24,6 +25,20 @@ class GeneratePostJob < ApplicationJob
   end
 
   private
+
+  # O risco de custo não é o uso normal — é bug em loop de regeneração.
+  def cost_limit_reached?(post)
+    return false unless GenerationCost.limit_reached?(post.project)
+
+    SystemAlert.raise_alert(
+      kind: "cost_limit_reached",
+      severity: "warning",
+      message: "Limite mensal de custo do projeto #{post.project.name} atingido. " \
+               "Geração bloqueada até o próximo mês ou até você aumentar o limite.",
+      context: { project_id: post.project_id }
+    )
+    true
+  end
 
   def assets_for(post)
     existing = post.assets.to_a

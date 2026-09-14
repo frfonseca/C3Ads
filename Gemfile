@@ -62,7 +62,7 @@ end
 # json 3.0 removeu o segundo argumento posicional de JSON.parse, que o
 # Rails 8.1 ainda usa em ActiveSupport::JSON.decode — qualquer coluna jsonb
 # quebra com ArgumentError. Fixado até o Rails se ajustar.
-gem "json", "~> 2.7"
+gem "json", "~> 3.0"
 
 # --- C3Ads ---
 gem "aasm"                      # state machine de Post e LandingPage

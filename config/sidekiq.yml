@@ -1,0 +1,7 @@
+:concurrency: 5
+:queues:
+  - [critical, 4]
+  - [default, 2]
+  # Renderização de vídeo tem fila própria com concorrência 1: ffmpeg satura
+  # CPU e não pode competir com publicação e gatilhos numa VPS de 2 vCPU.
+  - [video, 1]

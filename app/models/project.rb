@@ -7,6 +7,8 @@ class Project < ApplicationRecord
   has_many :assets, dependent: :destroy
   has_many :asset_collections, dependent: :destroy
   has_many :posts, dependent: :destroy
+  has_many :landing_pages, dependent: :destroy
+  has_many :leads, dependent: :destroy
 
   validates :name, presence: true
   validates :kind, inclusion: { in: KINDS }
@@ -16,6 +18,12 @@ class Project < ApplicationRecord
   scope :active, -> { where(active: true) }
 
   def property? = kind == "property"
+
+  def whatsapp_url
+    return if whatsapp_number.blank?
+
+    "https://wa.me/#{whatsapp_number.gsub(/\D/, '')}"
+  end
 
   private
 

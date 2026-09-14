@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= @page&.title.presence || @page&.project&.name %></title>
+
+    <%# Estas URLs circulam em WhatsApp o tempo todo — o preview é metade da
+        primeira impressão. %>
+    <meta property="og:title" content="<%= @page&.title %>">
+    <meta property="og:description" content="<%= @page&.blocks&.dig('subheadline') %>">
+    <meta property="og:type" content="website">
+    <% if (cover = @media&.first) && cover.file.attached? %>
+      <meta property="og:image" content="<%= url_for(cover.file) %>">
+    <% end %>
+
+    <style>
+      :root { <%= @brand&.css_variables_style %> }
+      body {
+        margin: 0;
+        font-family: var(--brand-body-font, system-ui);
+        color: var(--brand-text, #1a1a1a);
+        background: var(--brand-background, #fff);
+      }
+      h1, h2, h3 { font-family: var(--brand-heading-font, system-ui); color: var(--brand-primary); }
+      .wrap { max-width: 720px; margin: 0 auto; padding: 1.5rem; }
+      .gallery img { width: 100%; height: auto; border-radius: 8px; margin-bottom: .75rem; }
+      .cta { display: inline-block; background: var(--brand-accent); color: #fff;
+             padding: .8rem 1.4rem; border-radius: 6px; text-decoration: none; }
+      input, textarea { width: 100%; padding: .6rem; margin: .3rem 0 .8rem; }
+      .hp { position: absolute; left: -9999px; }
+    </style>
+  </head>
+  <body>
+    <% if flash[:notice] %><p role="status"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p role="alert"><%= flash[:alert] %></p><% end %>
+    <%= yield %>
+  </body>
+</html>

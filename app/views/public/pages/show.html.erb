@@ -1,0 +1,49 @@
+<% blocks = @page.blocks || {} %>
+<main class="wrap">
+  <h1><%= blocks["headline"].presence || @page.title %></h1>
+  <% if blocks["subheadline"].present? %><p><%= blocks["subheadline"] %></p><% end %>
+
+  <div class="gallery">
+    <%# Apenas assets públicos: documentos privados nunca chegam aqui. %>
+    <% @media.each do |asset| %>
+      <%= image_tag asset.file.variant(resize_to_limit: [1200, 1200]), loading: "lazy", alt: asset.title.to_s %>
+    <% end %>
+  </div>
+
+  <% if blocks["description"].present? %>
+    <section><%= simple_format blocks["description"] %></section>
+  <% end %>
+
+  <% Array(blocks["highlights"]).each_slice(1) do |group| %>
+    <ul><% group.each { |h| %><li><%= h %></li><% } %></ul>
+  <% end %>
+
+  <% Array(blocks["sections"]).each do |section| %>
+    <section>
+      <h2><%= section["title"] %></h2>
+      <%= simple_format section["body"] %>
+    </section>
+  <% end %>
+
+  <section id="contato">
+    <h2>Fale comigo</h2>
+    <%= form_with url: "/leads", method: :post do |f| %>
+      <%= hidden_field_tag :ref, params[:ref] %>
+      <%# Honeypot: invisível para gente, preenchido por bot. %>
+      <div class="hp"><%= label_tag :website, "Deixe em branco" %><%= text_field_tag :website %></div>
+
+      <%= label_tag "lead[name]", "Nome" %><%= text_field_tag "lead[name]" %>
+      <%= label_tag "lead[phone]", "WhatsApp" %><%= telephone_field_tag "lead[phone]" %>
+      <%= label_tag "lead[email]", "E-mail" %><%= email_field_tag "lead[email]" %>
+      <%= label_tag "lead[message]", "Mensagem" %><%= text_area_tag "lead[message]", nil, rows: 3 %>
+
+      <label>
+        <%= check_box_tag :consent %>
+        Autorizo o contato e o armazenamento dos meus dados para essa finalidade.
+        <%= link_to "Política de privacidade", "/privacidade" %>
+      </label>
+
+      <%= f.submit blocks["cta_text"].presence || "Enviar", class: "cta" %>
+    <% end %>
+  </section>
+</main>

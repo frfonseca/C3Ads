@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   # Landing pages — cada uma no seu subdomínio.
   constraints(LandingPageConstraint.new) do
     root "public/pages#show", as: :landing_page
+    get  "/privacidade", to: "public/pages#privacy", as: :landing_page_privacy
     post "/leads", to: "public/leads#create", as: :landing_page_leads
   end
 

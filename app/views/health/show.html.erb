@@ -1,0 +1,45 @@
+<h1>Saúde do sistema</h1>
+
+<section>
+  <h2>Tokens da Meta</h2>
+  <ul>
+    <% @accounts.each do |account| %>
+      <li>
+        <%= account.name %> — vence <%= l account.token_expires_at %>
+        <% if account.token_expired? %><strong>VENCIDO</strong>
+        <% elsif account.token_expiring_soon? %><strong>vence em breve</strong><% end %>
+      </li>
+    <% end %>
+  </ul>
+</section>
+
+<section>
+  <h2>Alertas abertos (<%= @alerts.size %>)</h2>
+  <ul>
+    <% @alerts.each do |alert| %>
+      <li>
+        [<%= alert.severity %>] <strong><%= alert.kind %></strong> — <%= alert.message %>
+        <small><%= l alert.created_at %></small>
+        <%= button_to "Resolver", resolve_health_path(id: alert.id), method: :post %>
+      </li>
+    <% end %>
+  </ul>
+</section>
+
+<section>
+  <h2>Publicações que falharam</h2>
+  <ul>
+    <% @failed_posts.each do |post| %>
+      <li><%= link_to "Post ##{post.id}", [post.project, post] %> — <%= post.failure_reason %></li>
+    <% end %>
+  </ul>
+</section>
+
+<section>
+  <h2>Custo de LLM neste mês</h2>
+  <ul>
+    <% @month_costs.each do |project_id, total| %>
+      <li><%= Project.find(project_id).name %>: US$ <%= number_with_precision(total, precision: 2) %></li>
+    <% end %>
+  </ul>
+</section>

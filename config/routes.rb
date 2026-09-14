@@ -7,6 +7,9 @@ Rails.application.routes.draw do
 
     resource :session, only: %i[new create destroy]
 
+    get  "/saude", to: "health#show", as: :health
+    post "/saude/:id/resolver", to: "health#resolve", as: :resolve_health
+
     resources :projects do
       resources :assets, only: %i[index create update destroy]
       resource  :brand,  only: %i[edit update]

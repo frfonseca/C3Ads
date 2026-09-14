@@ -72,6 +72,7 @@ gem "image_processing", "~> 1.2" # libvips: redimensionamento
 gem "ruby_llm", "1.16.0"        # camada de LLM multi-provedor
 gem "rack-attack"               # rate limit nos formulários públicos
 gem "faraday"                   # clientes HTTP (Meta, Telegram, clima)
+gem "rubyzip", require: "zip"  # exportação manual do post
 gem "dotenv-rails"              # credenciais em desenvolvimento
 
 group :development, :test do

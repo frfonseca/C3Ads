@@ -13,6 +13,9 @@ Rails.application.routes.draw do
     resources :projects do
       resources :assets, only: %i[index create update destroy]
       resource  :brand,  only: %i[edit update]
+      resources :triggers, only: %i[index create update destroy] do
+        member { post :fire }
+      end
       resources :posts,  only: %i[index show new create edit update destroy] do
         member do
           post :approve

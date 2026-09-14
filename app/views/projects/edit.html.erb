@@ -1,0 +1,6 @@
+<h1>Novo projeto</h1>
+<%= form_with model: @project do |f| %>
+  <%= f.label :name %> <%= f.text_field :name %>
+  <%= f.label :kind %> <%= f.select :kind, Project::KINDS %>
+  <%= f.submit "Criar" %>
+<% end %>

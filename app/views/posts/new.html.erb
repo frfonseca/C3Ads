@@ -1,0 +1,8 @@
+<h1>Novo post — <%= @project.name %></h1>
+<%= form_with model: [@project, @post] do |f| %>
+  <%= f.label :media_type %>
+  <%= f.select :media_type, Post::MEDIA_TYPES %>
+  <%= label_tag :context, "Contexto para a geração (opcional)" %>
+  <%= text_field_tag :context, nil, placeholder: "ex: promoção de dia de chuva" %>
+  <%= f.submit "Gerar conteúdo" %>
+<% end %>

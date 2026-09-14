@@ -36,6 +36,10 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include ActiveJob::TestHelper
+
+  # Jobs não rodam de verdade nos testes: são inspecionados na fila.
+  config.before { ActiveJob::Base.queue_adapter = :test }
   config.before(:suite) { ActiveStorage::Blob.service } # falha cedo se o storage estiver mal configurado
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [

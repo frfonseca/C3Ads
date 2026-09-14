@@ -60,6 +60,22 @@ META_FAKE=true LLM_FAKE=true bin/rails server   # força o modo fake
 O cookie de sessão fica preso a `app.` e nunca ao domínio-pai — caso contrário
 seria enviado às páginas públicas.
 
+## Fases implementadas
+
+| Fase | O que entrega | Depende de credencial? |
+|---|---|---|
+| 1 | Fundação, modelos, invariante de aprovação | não |
+| 2 | Geração via LLM, aba Marca | chave de LLM (tem fake) |
+| 3 | Fila de aprovação, exportação manual | não |
+| 4 | Publicação, idempotência, métricas | token da Meta (tem fake) |
+| 5 | Landing pages, link curto, leads, LGPD | não |
+| 6 | Alertas, renovação de token, teto de custo | bot do Telegram (opcional) |
+| 7 | Slideshow em vídeo | ffmpeg instalado |
+| 8 | Gatilhos: clima, agenda, manual | não |
+| 9 | Anúncios pagos com restrições de imóvel | conta de anúncios (tem fake) |
+
+Ao fim da Fase 4 o sistema já resolve o problema de ponta a ponta.
+
 ## Testes
 
 ```bash

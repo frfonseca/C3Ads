@@ -16,6 +16,13 @@ Rails.application.routes.draw do
       resources :triggers, only: %i[index create update destroy] do
         member { post :fire }
       end
+      resources :ad_campaigns, only: %i[index new create] do
+        member do
+          post :activate
+          post :pause
+        end
+      end
+      resources :ad_targetings, only: %i[index create update destroy]
       resources :posts,  only: %i[index show new create edit update destroy] do
         member do
           post :approve

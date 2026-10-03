@@ -98,40 +98,43 @@ Exemplos de invariantes reescritas como integração:
 - [ ] Login no painel → `Set-Cookie` com `domain=app.<dominio>` (hoje o spec só lê a configuração).
 - [ ] Criar anúncio pelo fluxo → o fake da Meta recebeu `status=PAUSED` em campanha, ad set e ad.
 
-### 0.1 Pipelines e branches: `staging` e `main` (2026-10-03)
+### 0.1 Pipelines e branches (2026-10-03)
 
-Decisão: suíte rápida para entrar em `staging`; suíte completa e aprovação
-para entrar em `main`; `main` = produção. Vários PRs se acumulam em `staging`
-e vão juntos num único deploy.
+Decisões:
+
+- **PR é sempre contra `main`.** Nunca contra `staging`.
+- **`staging` é descartável**: recebe a branch de trabalho por script, para ver
+  mudanças rodando juntas no ambiente de staging. Ninguém parte dela para
+  trabalhar e ela nunca é mergeada em lugar nenhum.
+  - `bin/staging-push` — junta (merge) a branch atual em `staging`; `--replace` faz `staging` virar exatamente a branch atual.
+  - `bin/staging-reset` — volta `staging` para `main`, mostrando o que será descartado (`--yes` pula a confirmação).
+- **`main` acumula vários PRs mergeados e vai para produção num único deploy**, depois da suíte completa e de aprovação humana.
 
 Situação: nenhum ambiente existe ainda (nem staging, nem produção). O desenho
 abaixo é o alvo; a parte de CI pode ser construída antes dos servidores.
 
 ```
-feature ──PR──[Gate rápido]──▶ staging ──▶ deploy staging (automático)
-                                  │
-                                  └──PR de release──[Gate completo]──[Aprovação humana]──merge──▶ main ──▶ deploy produção ──▶ smoke + rollback
+feature ──bin/staging-push──▶ staging ──[suíte rápida]──▶ deploy staging
+
+feature ──PR──[suíte rápida]──merge──▶ main ──[Gate 1: suíte completa]──[Gate 2: aprovação]──▶ deploy produção ──▶ smoke + rollback
+                                        (acumula vários PRs)
 ```
 
 Gates:
 
-- [ ] **Gate rápido (PR → `staging`, alvo < 5 min)**: lint, Brakeman, auditorias, **todas as invariantes em integração**, request specs principais, contratos com o fake da Meta em Rack. Bloqueia o merge.
-- [ ] **Sinal antecipado (push em `staging`, não bloqueia)**: suíte completa com `concurrency: cancel-in-progress` — o PR de release não é a primeira vez que a suíte completa roda.
-- [ ] **Gate completo (PR `staging` → `main`)**: tudo do rápido + system specs com navegador, fluxo de ponta a ponta, evals determinísticos do LLM, smoke contra o staging no ar.
-- [ ] **Aprovação humana**: revisão obrigatória no PR de release (branch protection) e/ou GitHub Environment `production` com aprovador.
-- [ ] **Deploy de produção**: push em `main` → Kamal; health check; `kamal rollback` se falhar.
+- [ ] **Push em `staging`**: suíte rápida; se verde, deploy automático no staging.
+- [ ] **PR → `main` (alvo < 5 min)**: suíte rápida — lint, Brakeman, auditorias, **todas as invariantes em integração**, request specs principais, contratos com o fake da Meta em Rack. Bloqueia o merge.
+- [ ] **Gate 1 — push em `main`**: suíte completa (+ system specs com navegador, ponta a ponta, evals determinísticos do LLM, smoke contra staging) com `concurrency: cancel-in-progress`, sempre no SHA mais recente — o acúmulo de PRs acontece sozinho.
+- [ ] **Gate 2 — produção**: GitHub Environment `production` com aprovação obrigatória; só aceita SHA com Gate 1 verde; Kamal faz o deploy daquele SHA; health check; `kamal rollback` se falhar.
 - [ ] **Agendado, não bloqueia**: regravar cassetes, LLM-as-judge de tom, mutation testing.
 - [ ] Separação das suítes por tag do RSpec (`:full`); o rápido roda `--tag ~full`.
 
-Regras para o modelo de duas branches funcionar:
+Regras:
 
-- [ ] **`main` só recebe PR vindo de `staging`**: branch protection sem push direto + check que falha se a branch de origem não for `staging`. Garante que o que foi testado é o que vai para produção.
-- [ ] **PR de release com merge commit, nunca squash/rebase**: squash reescreve os commits e o próximo PR de release passa a mostrar commits repetidos e conflitos falsos.
-- [ ] **`staging` como branch padrão no GitHub**: PRs de agentes e do Dependabot (`target-branch: staging`) caem lá por padrão.
-- [ ] **Hotfix também passa por `staging`** (gate rápido → release). Se for urgente demais e entrar direto em `main`, fazer merge de `main` de volta em `staging` imediatamente.
-- **Invariante nunca fica só na suíte lenta**: o que causa dano irreversível (publicar sem aprovação, anúncio ativo, asset privado público, cookie no domínio-pai) bloqueia já o PR para `staging`.
-- **`staging` sempre verde na suíte rápida**: agentes partem dela; base quebrada contamina o trabalho seguinte.
-- **Release vermelha para a fila**: corrigir em `staging` antes de novos merges; achar o culpado com o diagnóstico do teste + `git bisect run` desde a última release.
+- **Invariante nunca fica só na suíte lenta**: o que causa dano irreversível (publicar sem aprovação, anúncio ativo, asset privado público, cookie no domínio-pai) bloqueia já o PR.
+- **`main` sempre verde na suíte rápida**: agentes partem dela.
+- **Gate 1 vermelho para a fila**: corrigir antes de novos merges; achar o culpado com o diagnóstico do teste + `git bisect run` desde o último SHA verde.
+- **`staging` nunca entra em `main`**: check no PR que falha se a branch de origem for `staging`. `staging` não tem proteção contra force push (os scripts reescrevem).
 - **Teste flaky na suíte completa é bug**, não motivo para re-rodar até passar.
 
 Ambientes (a criar):

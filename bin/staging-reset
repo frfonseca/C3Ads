@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Volta `staging` para o estado de `main`, descartando tudo que foi enviado
+# com bin/staging-push.
+#
+# Uso:
+#   bin/staging-reset        # mostra o que será descartado e pede confirmação
+#   bin/staging-reset --yes  # sem confirmação (para scripts e agentes)
+set -euo pipefail
+
+REMOTE=origin
+
+fail() { echo "staging-reset: $*" >&2; exit 1; }
+
+yes=false
+case "${1:-}" in
+  --yes|-y) yes=true ;;
+  "") ;;
+  *) fail "opção desconhecida: $1" ;;
+esac
+
+git fetch --quiet "$REMOTE" main
+if git fetch --quiet "$REMOTE" staging 2>/dev/null; then
+  discarded=$(git log --oneline --no-merges "$REMOTE/main..$REMOTE/staging")
+  if [[ -n "$discarded" ]]; then
+    echo "Commits em staging que não estão em main e serão descartados:"
+    echo "$discarded"
+  fi
+fi
+
+if ! $yes; then
+  read -r -p "Resetar staging para main ($(git rev-parse --short "$REMOTE/main"))? [s/N] " answer
+  [[ "$answer" =~ ^[sSyY]$ ]] || fail "cancelado"
+fi
+
+git push --force-with-lease="staging" "$REMOTE" "$REMOTE/main:refs/heads/staging"
+echo "staging resetada para main ($(git rev-parse --short "$REMOTE/main"))"

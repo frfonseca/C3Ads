@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Envia a branch atual para `staging`, somando ao que já está lá.
+#
+# `staging` é descartável: ninguém abre PR contra ela nem parte dela para
+# trabalhar. Serve só para ver mudanças rodando juntas antes do PR para `main`.
+#
+# Uso:
+#   bin/staging-push            # faz merge da branch atual em staging
+#   bin/staging-push --replace  # staging passa a ser exatamente a branch atual
+set -euo pipefail
+
+REMOTE=origin
+
+fail() { echo "staging-push: $*" >&2; exit 1; }
+
+replace=false
+case "${1:-}" in
+  --replace) replace=true ;;
+  "") ;;
+  *) fail "opção desconhecida: $1" ;;
+esac
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+[[ "$branch" == "HEAD" ]] && fail "HEAD destacado; faça checkout de uma branch"
+[[ "$branch" == "main" || "$branch" == "staging" ]] && fail "rode a partir de uma branch de trabalho, não de $branch"
+git diff --quiet && git diff --cached --quiet || fail "há mudanças não commitadas"
+
+git fetch --quiet "$REMOTE" main
+staging_exists=false
+git fetch --quiet "$REMOTE" staging 2>/dev/null && staging_exists=true
+
+if $replace || ! $staging_exists; then
+  git push --force-with-lease="staging" "$REMOTE" "HEAD:refs/heads/staging"
+  echo "staging agora é $branch ($(git rev-parse --short HEAD))"
+  exit 0
+fi
+
+# Merge num worktree temporário, para não mexer no checkout atual.
+tmp=$(mktemp -d)
+cleanup() { git worktree remove --force "$tmp" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+
+git worktree add --quiet --detach "$tmp" "$REMOTE/staging"
+if ! git -C "$tmp" merge --quiet --no-ff --no-edit -m "staging: merge $branch" "$branch"; then
+  git -C "$tmp" merge --abort || true
+  fail "conflito ao juntar $branch com staging. Use bin/staging-reset ou bin/staging-push --replace"
+fi
+
+# Sem force: se alguém mudou staging no meio do caminho, o push falha e basta rodar de novo.
+git -C "$tmp" push --quiet "$REMOTE" "HEAD:refs/heads/staging" \
+  || fail "staging mudou durante o merge; rode de novo"
+
+echo "$branch juntada em staging ($(git -C "$tmp" rev-parse --short HEAD))"

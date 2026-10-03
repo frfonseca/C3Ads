@@ -15,6 +15,8 @@ class Post < ApplicationRecord
 
   has_many :post_media, -> { order(:position) }, dependent: :destroy, inverse_of: :post
   has_many :assets, through: :post_media
+  has_many :publish_attempts, dependent: :destroy
+  has_many :post_metrics, dependent: :destroy
 
   # Default na aplicação, não no banco: o schema dumper do Rails 8.1 omite
   # silenciosamente qualquer tabela com coluna jsonb que tenha DEFAULT.

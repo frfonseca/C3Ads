@@ -134,6 +134,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["post_id"], name: "index_post_media_on_post_id"
   end
 
+  create_table "post_metrics", force: :cascade do |t|
+    t.datetime "collected_at", null: false
+    t.integer "comments"
+    t.datetime "created_at", null: false
+    t.integer "impressions"
+    t.integer "likes"
+    t.bigint "post_id", null: false
+    t.integer "reach"
+    t.integer "saved"
+    t.integer "shares"
+    t.datetime "updated_at", null: false
+    t.index ["post_id", "collected_at"], name: "index_post_metrics_on_post_id_and_collected_at", unique: true
+    t.index ["post_id"], name: "index_post_metrics_on_post_id"
+  end
+
   create_table "posts", force: :cascade do |t|
     t.bigint "account_id"
     t.datetime "approved_at"
@@ -176,6 +191,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["account_id"], name: "index_projects_on_account_id"
   end
 
+  create_table "publish_attempts", force: :cascade do |t|
+    t.string "container_id"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "outcome", null: false
+    t.bigint "post_id", null: false
+    t.text "request_summary"
+    t.text "response_summary"
+    t.string "step", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id", "step"], name: "index_publish_attempts_on_post_id_and_step"
+    t.index ["post_id"], name: "index_publish_attempts_on_post_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "asset_collection_memberships", "asset_collections"
@@ -188,7 +217,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "brands", "projects"
   add_foreign_key "post_media", "assets"
   add_foreign_key "post_media", "posts"
+  add_foreign_key "post_metrics", "posts"
   add_foreign_key "posts", "accounts"
   add_foreign_key "posts", "projects"
   add_foreign_key "projects", "accounts"
+  add_foreign_key "publish_attempts", "posts"
 end

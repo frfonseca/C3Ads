@@ -37,6 +37,7 @@ end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include ActiveJob::TestHelper
+  config.include ActiveSupport::Testing::TimeHelpers
 
   # Jobs não rodam de verdade nos testes: são inspecionados na fila.
   config.before { ActiveJob::Base.queue_adapter = :test }

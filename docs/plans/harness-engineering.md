@@ -98,6 +98,41 @@ Exemplos de invariantes reescritas como integração:
 - [ ] Login no painel → `Set-Cookie` com `domain=app.<dominio>` (hoje o spec só lê a configuração).
 - [ ] Criar anúncio pelo fluxo → o fake da Meta recebeu `status=PAUSED` em campanha, ad set e ad.
 
+### 0.1 Pipelines: rápido no PR, completo antes da produção (2026-10-03)
+
+Ideia: suíte rápida para mergear, suíte completa só antes de ir para produção,
+acumulando vários PRs num único deploy.
+
+Desenho proposto (trunk-based, sem branch `staging` de longa duração — a
+"release" é um SHA da `main`):
+
+```
+PR ──[Gate PR: suíte rápida]──▶ main ──▶ deploy staging (automático)
+                                  │
+                                  └─[Gate 1: suíte completa no último SHA]──▶ candidato a release
+                                                                                  │
+                                                     [Gate 2: aprovação humana]──▶ deploy produção (Kamal) ──▶ smoke + rollback
+```
+
+- [ ] **Gate PR (rápido, alvo < 5 min)**: lint, Brakeman, auditorias, **todas as invariantes em integração**, request specs principais, contratos com o fake da Meta em Rack. Bloqueia o merge.
+- [ ] **Gate 1 (completo)**: tudo do rápido + system specs com navegador, fluxo de ponta a ponta, evals determinísticos do LLM, smoke contra o staging no ar. Roda a cada push na `main` com `concurrency: cancel-in-progress` — o acúmulo de PRs acontece sozinho, sempre testando o SHA mais recente.
+- [ ] **Gate 2 (produção)**: GitHub Environment `production` com aprovação obrigatória; só aceita SHA com Gate 1 verde; deploy via Kamal daquele SHA exato; health check após o deploy e `kamal rollback` se falhar.
+- [ ] **Agendado, não bloqueia**: regravar cassetes, LLM-as-judge de tom, mutation testing — viram issue/PR quando acham algo.
+- [ ] Separação das suítes por tag do RSpec (`:full`) ou diretório; o rápido roda `--tag ~full`.
+
+Regras:
+
+- **Invariante nunca fica só na suíte lenta.** O que causa dano irreversível (publicar sem aprovação, anúncio ativo, asset privado público, cookie no domínio-pai) bloqueia o PR.
+- **`main` sempre verde na suíte rápida.** Agentes partem da `main`; base quebrada contamina todo trabalho seguinte.
+- **Gate 1 vermelho para tudo**: corrigir antes de qualquer outro merge. Para achar o PR culpado num lote: diagnóstico do teste + `git bisect run` na faixa desde o último SHA verde.
+- **Lotes pequenos**: Gate 1 roda a cada push, então o lote é de no máximo poucos PRs; não esperar dias para descobrir.
+- **Teste flaky na suíte completa é bug**, não motivo para re-rodar até passar.
+
+Em aberto:
+
+- [ ] Já existe servidor de staging? (precisa de `config/deploy.staging.yml` no Kamal.)
+- [ ] Staging usa os fakes até haver conta de teste da Meta.
+
 ### 1. Testes por papel, com regras de mudança diferentes
 
 | Tipo | Exemplo | Quem pode mudar |

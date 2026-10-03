@@ -69,7 +69,7 @@ gem "aasm"                      # state machine de Post e LandingPage
 gem "sidekiq"                   # jobs (substitui solid_queue)
 gem "sidekiq-cron"              # gatilhos recorrentes
 gem "image_processing", "~> 1.2" # libvips: redimensionamento
-gem "ruby_llm", "1.16.0"        # camada de LLM multi-provedor
+gem "ruby_llm", "2.0.0"         # camada de LLM multi-provedor
 gem "rack-attack"               # rate limit nos formulários públicos
 gem "faraday"                   # clientes HTTP (Meta, Telegram, clima)
 gem "dotenv-rails"              # credenciais em desenvolvimento

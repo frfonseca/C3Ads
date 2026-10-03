@@ -56,6 +56,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "ad_campaigns", force: :cascade do |t|
+    t.datetime "activated_at"
+    t.bigint "ad_targeting_id"
+    t.datetime "created_at", null: false
+    t.integer "daily_budget_cents"
+    t.string "meta_ad_id"
+    t.string "meta_ad_set_id"
+    t.string "meta_campaign_id"
+    t.string "name", null: false
+    t.string "objective", default: "OUTCOME_TRAFFIC", null: false
+    t.bigint "post_id"
+    t.bigint "project_id", null: false
+    t.string "special_ad_category"
+    t.string "state", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ad_targeting_id"], name: "index_ad_campaigns_on_ad_targeting_id"
+    t.index ["post_id"], name: "index_ad_campaigns_on_post_id"
+    t.index ["project_id"], name: "index_ad_campaigns_on_project_id"
+  end
+
+  create_table "ad_targetings", force: :cascade do |t|
+    t.integer "age_max"
+    t.integer "age_min"
+    t.string "countries", default: ["BR"], array: true
+    t.datetime "created_at", null: false
+    t.string "genders", default: [], array: true
+    t.string "interests", default: [], array: true
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "name"
+    t.bigint "project_id", null: false
+    t.integer "radius_km"
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_ad_targetings_on_project_id"
+  end
+
   create_table "asset_collection_memberships", force: :cascade do |t|
     t.bigint "asset_collection_id", null: false
     t.bigint "asset_id", null: false
@@ -374,6 +410,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ad_campaigns", "ad_targetings"
+  add_foreign_key "ad_campaigns", "posts"
+  add_foreign_key "ad_campaigns", "projects"
+  add_foreign_key "ad_targetings", "projects"
   add_foreign_key "asset_collection_memberships", "asset_collections"
   add_foreign_key "asset_collection_memberships", "assets"
   add_foreign_key "asset_collections", "projects"

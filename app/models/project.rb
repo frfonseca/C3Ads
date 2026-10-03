@@ -9,6 +9,8 @@ class Project < ApplicationRecord
   has_many :posts, dependent: :destroy
   has_many :landing_pages, dependent: :destroy
   has_many :triggers, dependent: :destroy
+  has_many :ad_campaigns, dependent: :destroy
+  has_many :ad_targetings, dependent: :destroy
   has_many :leads, dependent: :destroy
 
   validates :name, presence: true

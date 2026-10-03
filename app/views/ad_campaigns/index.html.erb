@@ -1,0 +1,18 @@
+<h1>Campanhas — <%= @project.name %></h1>
+<ul>
+  <% @campaigns.each do |campaign| %>
+    <li>
+      <strong><%= campaign.name %></strong> — <%= campaign.state %>
+      <% if campaign.housing? %><small>categoria HOUSING</small><% end %>
+      <small>R$ <%= number_with_precision(campaign.daily_budget_brl, precision: 2) %>/dia</small>
+
+      <% if campaign.state == "created_paused" || campaign.state == "paused" %>
+        <%= button_to "Ativar (começa a gastar)", activate_project_ad_campaign_path(@project, campaign),
+                      method: :post, data: { turbo_confirm: "Ativar a campanha? O orçamento diário passa a ser gasto." } %>
+      <% elsif campaign.active? %>
+        <%= button_to "Pausar", pause_project_ad_campaign_path(@project, campaign), method: :post %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+<%= link_to "Nova campanha", new_project_ad_campaign_path(@project) %>

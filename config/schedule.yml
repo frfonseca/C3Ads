@@ -13,3 +13,8 @@ anonymize_stale_leads:
   cron: "30 4 * * *"
   class: AnonymizeStaleLeadsJob
   description: "Retenção LGPD: apaga PII de leads parados há 12 meses"
+
+evaluate_triggers:
+  cron: "0 * * * *"
+  class: EvaluateTriggersJob
+  description: "Avalia gatilhos de clima e agenda — cria posts para aprovação"

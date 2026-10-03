@@ -48,3 +48,13 @@ FactoryBot.define do
     usd { 0.02 }
   end
 end
+
+FactoryBot.define do
+  factory :trigger do
+    project
+    kind { "schedule" }
+    sequence(:name) { |n| "Gatilho #{n}" }
+    condition { { "cron" => "0 10 * * 2" } }
+    cooldown_hours { 24 }
+  end
+end

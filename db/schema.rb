@@ -331,6 +331,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["kind", "resolved_at"], name: "index_system_alerts_on_kind_and_resolved_at"
   end
 
+  create_table "trigger_events", force: :cascade do |t|
+    t.jsonb "context"
+    t.datetime "created_at", null: false
+    t.datetime "evaluated_at", null: false
+    t.boolean "fired", default: false, null: false
+    t.bigint "post_id"
+    t.text "reason"
+    t.bigint "trigger_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_trigger_events_on_post_id"
+    t.index ["trigger_id", "evaluated_at"], name: "index_trigger_events_on_trigger_id_and_evaluated_at"
+    t.index ["trigger_id"], name: "index_trigger_events_on_trigger_id"
+  end
+
+  create_table "triggers", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.jsonb "condition"
+    t.integer "cooldown_hours", default: 24, null: false
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.datetime "last_fired_at"
+    t.string "name"
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "kind"], name: "index_triggers_on_project_id_and_kind"
+    t.index ["project_id"], name: "index_triggers_on_project_id"
+  end
+
   create_table "video_renders", force: :cascade do |t|
     t.bigint "asset_id"
     t.datetime "created_at", null: false
@@ -378,6 +406,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "publish_attempts", "posts"
   add_foreign_key "short_links", "destinations"
   add_foreign_key "short_links", "posts"
+  add_foreign_key "trigger_events", "posts"
+  add_foreign_key "trigger_events", "triggers"
+  add_foreign_key "triggers", "projects"
   add_foreign_key "video_renders", "assets"
   add_foreign_key "video_renders", "posts"
 end

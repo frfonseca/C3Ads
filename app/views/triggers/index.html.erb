@@ -1,0 +1,25 @@
+<h1>Gatilhos — <%= @project.name %></h1>
+
+<ul>
+  <% @triggers.each do |trigger| %>
+    <li>
+      <strong><%= trigger.name %></strong> (<%= trigger.kind %>)
+      <% if trigger.in_cooldown? %><small>em cooldown até <%= l(trigger.last_fired_at + trigger.cooldown_hours.hours) %></small><% end %>
+
+      <%= form_with url: fire_project_trigger_path(@project, trigger), method: :post do |f| %>
+        <%= text_field_tag :note, nil, placeholder: "Contexto (ex: promoção desta semana)" %>
+        <%= f.submit "Gerar post agora" %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<h2>Avaliações recentes</h2>
+<ul>
+  <% @recent_events.each do |event| %>
+    <li>
+      <%= l event.evaluated_at %> — <%= event.trigger.name %>:
+      <%= event.fired? ? "disparou" : "não disparou" %> (<%= event.reason %>)
+    </li>
+  <% end %>
+</ul>

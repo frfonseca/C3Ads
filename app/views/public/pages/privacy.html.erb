@@ -1,0 +1,21 @@
+<main class="wrap">
+  <h1>Política de privacidade</h1>
+  <p><strong>Controlador:</strong> <%= ENV.fetch("PRIVACY_CONTROLLER", "o responsável por este anúncio") %>.</p>
+
+  <h2>Que dados coletamos</h2>
+  <p>Nome, telefone e e-mail que você informa no formulário, e a mensagem que escrever.
+     Registramos também dados de navegação sem identificação pessoal (origem da visita,
+     navegador). Endereços IP são armazenados apenas de forma irreversível.</p>
+
+  <h2>Para que usamos</h2>
+  <p>Exclusivamente para responder ao seu contato sobre este anúncio. Não vendemos,
+     compartilhamos nem usamos seus dados para outra finalidade.</p>
+
+  <h2>Por quanto tempo</h2>
+  <p>Até 12 meses após o último contato. Depois disso, os dados pessoais são apagados
+     automaticamente.</p>
+
+  <h2>Seus direitos</h2>
+  <p>Você pode pedir a qualquer momento acesso, correção ou exclusão dos seus dados,
+     escrevendo para <%= ENV.fetch("PRIVACY_EMAIL", "o contato informado no anúncio") %>.</p>
+</main>

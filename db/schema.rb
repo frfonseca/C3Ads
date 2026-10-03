@@ -121,6 +121,93 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["project_id"], name: "index_brands_on_project_id", unique: true
   end
 
+  create_table "destinations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kind", default: "whatsapp", null: false
+    t.bigint "landing_page_id"
+    t.bigint "post_id"
+    t.text "prefilled_message"
+    t.datetime "updated_at", null: false
+    t.string "whatsapp_number"
+    t.index ["landing_page_id"], name: "index_destinations_on_landing_page_id"
+    t.index ["post_id"], name: "index_destinations_on_post_id"
+  end
+
+  create_table "landing_media", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "landing_page_id", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_landing_media_on_asset_id"
+    t.index ["landing_page_id", "position"], name: "index_landing_media_on_landing_page_id_and_position", unique: true
+    t.index ["landing_page_id"], name: "index_landing_media_on_landing_page_id"
+  end
+
+  create_table "landing_pages", force: :cascade do |t|
+    t.jsonb "blocks"
+    t.datetime "created_at", null: false
+    t.datetime "expires_at"
+    t.string "kind", default: "lead_capture", null: false
+    t.bigint "post_id"
+    t.string "previous_slugs", default: [], array: true
+    t.bigint "project_id", null: false
+    t.datetime "published_at"
+    t.string "slug", null: false
+    t.string "state", default: "draft", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_landing_pages_on_post_id"
+    t.index ["project_id"], name: "index_landing_pages_on_project_id"
+    t.index ["slug"], name: "index_landing_pages_on_slug", unique: true
+  end
+
+  create_table "leads", force: :cascade do |t|
+    t.datetime "anonymized_at"
+    t.datetime "consent_at"
+    t.text "consent_text"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.bigint "landing_page_id"
+    t.text "message"
+    t.string "name"
+    t.string "phone"
+    t.bigint "post_id"
+    t.bigint "project_id", null: false
+    t.bigint "short_link_id"
+    t.string "source", default: "form", null: false
+    t.string "status", default: "novo", null: false
+    t.datetime "updated_at", null: false
+    t.index ["landing_page_id"], name: "index_leads_on_landing_page_id"
+    t.index ["post_id"], name: "index_leads_on_post_id"
+    t.index ["project_id", "status"], name: "index_leads_on_project_id_and_status"
+    t.index ["project_id"], name: "index_leads_on_project_id"
+    t.index ["short_link_id"], name: "index_leads_on_short_link_id"
+  end
+
+  create_table "link_clicks", force: :cascade do |t|
+    t.datetime "clicked_at", null: false
+    t.datetime "created_at", null: false
+    t.string "ip_hash"
+    t.string "referrer"
+    t.bigint "short_link_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.index ["short_link_id"], name: "index_link_clicks_on_short_link_id"
+  end
+
+  create_table "page_views", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_hash"
+    t.bigint "landing_page_id", null: false
+    t.string "referrer"
+    t.bigint "short_link_id"
+    t.datetime "updated_at", null: false
+    t.datetime "viewed_at", null: false
+    t.index ["landing_page_id"], name: "index_page_views_on_landing_page_id"
+    t.index ["short_link_id"], name: "index_page_views_on_short_link_id"
+  end
+
   create_table "post_media", force: :cascade do |t|
     t.text "alt_text"
     t.bigint "asset_id", null: false
@@ -205,6 +292,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["post_id"], name: "index_publish_attempts_on_post_id"
   end
 
+  create_table "short_links", force: :cascade do |t|
+    t.integer "click_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.bigint "destination_id"
+    t.bigint "post_id"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["destination_id"], name: "index_short_links_on_destination_id"
+    t.index ["post_id"], name: "index_short_links_on_post_id"
+    t.index ["slug"], name: "index_short_links_on_slug", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "asset_collection_memberships", "asset_collections"
@@ -215,6 +314,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "brands", "assets", column: "logo_asset_id"
   add_foreign_key "brands", "assets", column: "logo_dark_asset_id"
   add_foreign_key "brands", "projects"
+  add_foreign_key "destinations", "landing_pages"
+  add_foreign_key "destinations", "posts"
+  add_foreign_key "landing_media", "assets"
+  add_foreign_key "landing_media", "landing_pages"
+  add_foreign_key "landing_pages", "posts"
+  add_foreign_key "landing_pages", "projects"
+  add_foreign_key "leads", "landing_pages"
+  add_foreign_key "leads", "posts"
+  add_foreign_key "leads", "projects"
+  add_foreign_key "leads", "short_links"
+  add_foreign_key "link_clicks", "short_links"
+  add_foreign_key "page_views", "landing_pages"
+  add_foreign_key "page_views", "short_links"
   add_foreign_key "post_media", "assets"
   add_foreign_key "post_media", "posts"
   add_foreign_key "post_metrics", "posts"
@@ -222,4 +334,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "posts", "projects"
   add_foreign_key "projects", "accounts"
   add_foreign_key "publish_attempts", "posts"
+  add_foreign_key "short_links", "destinations"
+  add_foreign_key "short_links", "posts"
 end

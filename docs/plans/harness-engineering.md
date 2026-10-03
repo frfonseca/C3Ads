@@ -78,6 +78,26 @@ Lacunas:
 Objetivo: o teste existe para **pegar o agente errando**. O risco é o agente
 escrever código e teste juntos, e o teste só confirmar o que o código faz.
 
+### 0. Decisão: integração primeiro (2026-10-03)
+
+Testes de integração são o padrão; teste unitário é a última escolha.
+
+- **Entrada pela borda do sistema**: request specs (HTTP no painel, landing pages, `/r/:slug`) e jobs executados de verdade. Poucos system specs com navegador para a tela de aprovação.
+- **Tudo real por dentro**: Postgres, Active Storage, AASM, jobs (`perform_enqueued_jobs` / Sidekiq inline), clientes `Meta::*` e `Content::Generator` reais.
+- **Substituir só na fronteira de rede**: em vez de trocar o cliente pelo fake em memória, o HTTP é interceptado por um **fake da Meta em Rack** (via `WebMock.stub_request(...).to_rack`), com estado: containers que passam por `IN_PROGRESS → FINISHED`, erros por código, cota. Assim o código do cliente real também é testado.
+- **Outside-in**: o fluxo de posts ainda não existe (rotas `approve`/`reject`/`regenerate` sem controller, nenhum job). Escrever primeiro o teste de integração do fluxo e construir até ele passar.
+- **Exceções onde unitário/estrutural ainda vale**: busca exaustiva na state machine, combinatória das regras de HOUSING, validação de schema da saída do LLM — combinatória demais para cobrir por HTTP. Mesmo assim, cada invariante tem também seu teste de integração.
+- **Diagnóstico na falha**: quando um teste de integração falha, imprimir as requisições recebidas pelo fake da Meta, a sequência de estados do post e o log relevante — o agente precisa achar a causa sem depurar.
+- **Velocidade**: transações por teste, tempo congelado (sem `sleep` no polling de container), execução paralela quando a suíte crescer.
+- **Mutation testing**: rodar agendado, não por PR, porque integração é mais lenta.
+
+Exemplos de invariantes reescritas como integração:
+
+- [ ] `POST /projects/:id/posts/:id/approve` sem usuário logado, ou publicar post não aprovado → recusa **e o fake da Meta não recebeu nenhuma chamada**.
+- [ ] Landing page pública nunca devolve URL de asset privado (inspecionar o HTML/redirects).
+- [ ] Login no painel → `Set-Cookie` com `domain=app.<dominio>` (hoje o spec só lê a configuração).
+- [ ] Criar anúncio pelo fluxo → o fake da Meta recebeu `status=PAUSED` em campanha, ad set e ad.
+
 ### 1. Testes por papel, com regras de mudança diferentes
 
 | Tipo | Exemplo | Quem pode mudar |

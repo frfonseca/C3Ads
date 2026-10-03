@@ -1,0 +1,47 @@
+<% brand = @project.brand %>
+<h1>Post #<%= @post.id %> <small>(<%= @post.state %>)</small></h1>
+
+<%# Prévia no formato do Instagram: quadrado, carrossel navegável %>
+<div class="preview" style="max-width: 420px;">
+  <% @post.post_media.each_with_index do |media, i| %>
+    <figure style="display: <%= i.zero? ? 'block' : 'none' %>;" data-carousel-slide="<%= i %>">
+      <%= image_tag media.asset.file.variant(resize_to_fill: [1080, 1080]),
+                    style: "width: 100%; aspect-ratio: 1; object-fit: cover;",
+                    alt: media.alt_text.to_s %>
+      <figcaption><small><%= i + 1 %>/<%= @post.post_media.size %></small></figcaption>
+    </figure>
+  <% end %>
+</div>
+
+<section>
+  <h2>Legenda <small><%= @post.caption.to_s.length %> caracteres</small></h2>
+  <%= form_with model: [@project, @post] do |f| %>
+    <%= f.text_area :caption, rows: 8, style: "width: 100%;" %>
+    <%= label_tag :hashtags_text, "Hashtags (#{@post.hashtags.size}/30)" %>
+    <%= text_area_tag "post[hashtags_text]", @post.hashtags.join(" "), rows: 2, style: "width: 100%;" %>
+    <%= f.submit "Salvar edição" %>
+  <% end %>
+</section>
+
+<section>
+  <h2>Decisão</h2>
+
+  <% if @post.pending_review? %>
+    <%= form_with url: approve_project_post_path(@project, @post), method: :post do |f| %>
+      <%= label_tag :scheduled_for, "Agendar para (deixe vazio para decidir depois)" %>
+      <%= datetime_field_tag :scheduled_for, @post.scheduled_for %>
+      <%= f.submit "Aprovar" %>
+    <% end %>
+
+    <%= form_with url: regenerate_project_post_path(@project, @post), method: :post do |f| %>
+      <%= text_field_tag :feedback, nil, placeholder: "O que ajustar? (ex: mais curto, sem emoji)" %>
+      <%= f.submit "Regenerar com feedback" %>
+    <% end %>
+
+    <%= button_to "Rejeitar", reject_project_post_path(@project, @post), method: :post %>
+  <% else %>
+    <p>Estado atual: <strong><%= @post.state %></strong></p>
+  <% end %>
+
+  <%= link_to "Exportar para publicar manualmente", export_project_post_path(@project, @post) %>
+</section>

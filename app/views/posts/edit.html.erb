@@ -1,0 +1,5 @@
+<h1>Editar post #<%= @post.id %></h1>
+<%= form_with model: [@project, @post] do |f| %>
+  <%= f.text_area :caption, rows: 8 %>
+  <%= f.submit "Salvar" %>
+<% end %>

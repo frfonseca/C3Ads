@@ -1,0 +1,20 @@
+<h1>Publicações — <%= @project.name %></h1>
+
+<nav>
+  <%= link_to "Todas", project_posts_path(@project) %> ·
+  <%= link_to "Aguardando aprovação", project_posts_path(@project, state: "pending_review") %> ·
+  <%= link_to "Agendadas", project_posts_path(@project, state: "scheduled") %> ·
+  <%= link_to "Publicadas", project_posts_path(@project, state: "published") %>
+</nav>
+
+<ul>
+  <% @posts.each do |post| %>
+    <li>
+      <span data-state="<%= post.state %>"><%= post.state %></span>
+      <%= link_to post.caption&.truncate(70).presence || "Post ##{post.id}", [@project, post] %>
+      <% if post.scheduled_for %><small><%= l post.scheduled_for %></small><% end %>
+    </li>
+  <% end %>
+</ul>
+
+<%= link_to "Novo post", new_project_post_path(@project) %>

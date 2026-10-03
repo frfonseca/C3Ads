@@ -122,6 +122,33 @@ escrever código e teste juntos, e o teste só confirmar o que o código faz.
 - [ ] Mensagem de falha que ensina a correção (ex.: "Invariante: publicação exige approved_by/approved_at. Use Post#approve_by!, nunca update(state:)").
 - [ ] Bug encontrado → teste primeiro, correção depois.
 
+## Contratos com APIs externas
+
+O contrato tem três lados: o que **enviamos**, o que **recebemos** e as
+**regras da plataforma**. Ele precisa estar escrito uma vez, em código, e ser
+usado pelo cliente real, pelo fake e pelos testes.
+
+### Problemas encontrados
+
+- [ ] **Fakes aceitam qualquer coisa** — `FakeMarketingClient#create_campaign(**params)` aceita chamada sem `name:`/`objective:`; o real quebraria. Teste passa, produção falha.
+- [ ] **Fakes só têm caminho feliz** — `container_status` sempre `FINISHED`; nunca `IN_PROGRESS`, `ERROR`, `EXPIRED`, token expirado, cota estourada.
+- [ ] **Rate limit detectado por HTTP 429** — a Meta costuma sinalizar limite com HTTP 400 e código de erro (4, 17, 32, 613...). Conferir na doc e classificar por `error.code`, não por status.
+- [ ] **Regras de HOUSING declaradas mas não aplicadas** — `HOUSING_MIN_RADIUS_KM` e `HOUSING_BLOCKED_TARGETING` não são usadas em lugar nenhum.
+- [ ] **Versão da Graph API fixa em v21.0** — versões da Meta expiram; conferir a data de descontinuação da v21.0.
+- [ ] **Saída do LLM não é validada localmente** — confia-se no `with_schema` do provedor; nada checa se `asset_id` pertence às fotos enviadas, posições únicas, `cover_index` no intervalo.
+- [ ] **ruby_llm 1.16 → 2.0 (major) mergeado sem testes no CI** — não se sabe se `with_schema`/`with_fallbacks` continuam iguais.
+
+### Estratégia
+
+1. [ ] **Contrato como código, fonte única**: schema de request (validado antes do HTTP, no real *e* no fake) e parsing da resposta para objetos de valor (`Meta::Container`, `Meta::PublishResult`...), não hashes crus. Fake devolve os mesmos objetos.
+2. [ ] **Regras da plataforma como validação**: HOUSING (raio mínimo, targeting bloqueado), `PAUSED`, limite de carrossel — aplicadas antes da chamada, testadas como invariante.
+3. [ ] **Testes de contrato compartilhados**: `shared_examples` rodando contra fake e real; o real usa cassetes VCR gravados de conta de teste/sandbox, com `filter_sensitive_data` para tokens e `record: :none` no CI.
+4. [ ] **Fake com modos de falha**: estados do container, erros por código (rate limit, token expirado 190, cota de publicação), injetáveis no teste. Respostas de erro copiadas de cassetes reais.
+5. [ ] **Regravação periódica**: rotina agendada com credenciais de teste regrava os cassetes; diff no cassete = API mudou → PR para revisão humana.
+6. [ ] **Ciclo de vida da versão da API**: versão em um lugar só, ADR com data de expiração, alerta antes de vencer; upgrade = regravar cassetes na nova versão.
+7. [ ] **Defesa em runtime** (o contrato pode mudar sem aviso): validar resposta e falhar alto com o payload no log; consultar `publishing_limit` antes de publicar; idempotência — guardar `container_id` antes de `media_publish` para retry não postar duas vezes.
+8. [ ] **LLM**: validação local da saída (JSON Schema + checagens semânticas + termos proibidos), aplicada também ao fake; cassetes por provedor (Anthropic, Gemini, OpenAI) para o caminho do `ruby_llm`; testes de contrato do uso da biblioteca para que bumps do Dependabot sejam barrados se quebrarem.
+
 ## Próximos passos
 
 Ordem proposta:

@@ -6,7 +6,8 @@ on:
 
 jobs:
   # staging é descartável e reescrita por bin/staging-push e bin/staging-reset:
-  # o conteúdo dela nunca deve entrar em main.
+  # o conteúdo dela nunca deve entrar em main, nem diretamente nem por uma
+  # branch que tenha feito merge de staging.
   pr_origin:
     runs-on: ubuntu-latest
     steps:
@@ -15,3 +16,18 @@ jobs:
         run: |
           echo "::error::PR a partir de staging não é permitido. Abra o PR a partir da branch de trabalho."
           exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Recusa commits de merge criados por bin/staging-push
+        run: |
+          merges=$(git log --merges --format='%h %s' --grep='^staging: merge' \
+            "origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}")
+          if [ -n "$merges" ]; then
+            echo "::error::Esta branch contém merges de staging. Refaça a branch a partir de main sem eles."
+            echo "$merges"
+            exit 1
+          fi

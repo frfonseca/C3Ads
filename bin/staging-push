@@ -25,25 +25,43 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 [[ "$branch" == "main" || "$branch" == "staging" ]] && fail "rode a partir de uma branch de trabalho, não de $branch"
 git diff --quiet && git diff --cached --quiet || fail "há mudanças não commitadas"
 
-git fetch --quiet "$REMOTE" main
-staging_exists=false
-git fetch --quiet "$REMOTE" staging 2>/dev/null && staging_exists=true
+# A branch vai para o remoto antes: o que roda em staging precisa existir em
+# algum lugar além de staging, que é reescrita a cada reset.
+git push --quiet -u "$REMOTE" "$branch"
 
-if $replace || ! $staging_exists; then
-  git push --force-with-lease="staging" "$REMOTE" "HEAD:refs/heads/staging"
+# Refspec explícito: funciona também em clones --single-branch.
+git fetch --quiet "$REMOTE" "+refs/heads/main:refs/remotes/$REMOTE/main"
+staging_sha=""
+if git fetch --quiet "$REMOTE" "+refs/heads/staging:refs/remotes/$REMOTE/staging" 2>/dev/null; then
+  staging_sha=$(git rev-parse "$REMOTE/staging")
+fi
+
+if $replace || [[ -z "$staging_sha" ]]; then
+  git push --quiet --force-with-lease="staging:$staging_sha" "$REMOTE" "HEAD:refs/heads/staging"
   echo "staging agora é $branch ($(git rev-parse --short HEAD))"
   exit 0
 fi
+
+if git merge-base --is-ancestor HEAD "$staging_sha"; then
+  echo "$branch já está em staging ($(git rev-parse --short "$staging_sha")); nada a fazer"
+  exit 0
+fi
+
+git var GIT_COMMITTER_IDENT >/dev/null 2>&1 || fail "configure git user.name e user.email antes"
 
 # Merge num worktree temporário, para não mexer no checkout atual.
 tmp=$(mktemp -d)
 cleanup() { git worktree remove --force "$tmp" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-git worktree add --quiet --detach "$tmp" "$REMOTE/staging"
+git worktree add --quiet --detach "$tmp" "$staging_sha"
+# A mensagem "staging: merge" é a assinatura que o pr-guard procura em PRs para main.
 if ! git -C "$tmp" merge --quiet --no-ff --no-edit -m "staging: merge $branch" "$branch"; then
-  git -C "$tmp" merge --abort || true
-  fail "conflito ao juntar $branch com staging. Use bin/staging-reset ou bin/staging-push --replace"
+  if [[ -n "$(git -C "$tmp" ls-files -u)" ]]; then
+    git -C "$tmp" merge --abort || true
+    fail "conflito ao juntar $branch com staging. Use bin/staging-reset ou bin/staging-push --replace"
+  fi
+  fail "o merge falhou (veja a mensagem acima)"
 fi
 
 # Sem force: se alguém mudou staging no meio do caminho, o push falha e basta rodar de novo.

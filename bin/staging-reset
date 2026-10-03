@@ -18,9 +18,12 @@ case "${1:-}" in
   *) fail "opção desconhecida: $1" ;;
 esac
 
-git fetch --quiet "$REMOTE" main
-if git fetch --quiet "$REMOTE" staging 2>/dev/null; then
-  discarded=$(git log --oneline --no-merges "$REMOTE/main..$REMOTE/staging")
+# Refspec explícito: funciona também em clones --single-branch.
+git fetch --quiet "$REMOTE" "+refs/heads/main:refs/remotes/$REMOTE/main"
+staging_sha=""
+if git fetch --quiet "$REMOTE" "+refs/heads/staging:refs/remotes/$REMOTE/staging" 2>/dev/null; then
+  staging_sha=$(git rev-parse "$REMOTE/staging")
+  discarded=$(git log --oneline --no-merges "$REMOTE/main..$staging_sha")
   if [[ -n "$discarded" ]]; then
     echo "Commits em staging que não estão em main e serão descartados:"
     echo "$discarded"
@@ -28,9 +31,10 @@ if git fetch --quiet "$REMOTE" staging 2>/dev/null; then
 fi
 
 if ! $yes; then
+  [[ -t 0 ]] || fail "sem terminal para confirmar; use --yes"
   read -r -p "Resetar staging para main ($(git rev-parse --short "$REMOTE/main"))? [s/N] " answer
   [[ "$answer" =~ ^[sSyY]$ ]] || fail "cancelado"
 fi
 
-git push --force-with-lease="staging" "$REMOTE" "$REMOTE/main:refs/heads/staging"
+git push --quiet --force-with-lease="staging:$staging_sha" "$REMOTE" "$REMOTE/main:refs/heads/staging"
 echo "staging resetada para main ($(git rev-parse --short "$REMOTE/main"))"

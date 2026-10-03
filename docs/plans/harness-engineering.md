@@ -46,7 +46,7 @@ Lacunas:
 
 1. [ ] Job de `rspec` no CI (Postgres e Redis como services) e passo em `bin/ci`.
 2. [ ] SessionStart hook: Ruby 3.4.8, `bundle install`, Postgres/Redis, `db:prepare`.
-3. [ ] Testes nunca saem para a rede: `WebMock.disable_net_connect!`, fakes forçados em `test`.
+3. [ ] Testes nunca saem para a rede: `require "webmock/rspec"` + `WebMock.disable_net_connect!` (hoje a gem é carregada mas nunca habilitada). Nos specs de integração, o HTTP vai para o fake da Meta em Rack — não para o fake em memória (ver seção 0).
 4. [ ] Um comando único de "tudo verde" (`bin/ci`), igual local e CI.
 
 ### Fase B — guias
@@ -185,7 +185,7 @@ Ambientes (a criar):
 
 ### 7. Sinal bom para o agente
 
-- [ ] Suíte em menos de 1–2 minutos.
+- [ ] Suíte rápida em menos de 5 minutos no CI (mesma meta da seção 0.1).
 - [ ] Determinística: rede bloqueada, tempo congelado, seed fixa; flaky é bug.
 - [ ] Mensagem de falha que ensina a correção (ex.: "Invariante: publicação exige approved_by/approved_at. Use Post#approve_by!, nunca update(state:)").
 - [ ] Bug encontrado → teste primeiro, correção depois.
@@ -235,19 +235,75 @@ Preparar a conta (os nomes de menu da Meta mudam; conferir na hora):
 - [ ] Ad account sandbox da Marketing API (anúncios não são veiculados e não geram gasto).
 - [ ] Token de longa duração guardado como secret do ambiente, nunca no repositório.
 
+## Revisão adversarial (2026-10-03)
+
+Dois revisores: um pela lente do artigo, outro pela viabilidade. Achados
+conferidos contra o código. Itens já corrigidos marcados com [x].
+
+### Corrigido
+
+- [x] `bin/staging-push`: falhava em clone `--single-branch`; sem `user.email` dizia "conflito" quando não era; imprimia "juntada" num merge sem efeito; mandava para staging commits que não existiam em nenhuma outra branch (agora faz push da branch antes).
+- [x] `bin/staging-reset`: sem terminal saía com erro mudo (agora pede `--yes`); lease com SHA explícito.
+- [x] `pr-guard.yml`: só checava `head_ref == staging`; uma branch que fez merge de staging passava. Agora também recusa commits `staging: merge` no PR.
+
+### Bloqueantes descobertos
+
+- [ ] **Produção cai em silêncio no fake**: `Meta::GraphClient.build` / `MarketingClient.build` devolvem o fake quando a conta é `nil` ou desconectada, em qualquer ambiente. Em produção o post pode virar `published` sem ter sido publicado. Em produção, falhar alto; fake só em `development`/`test` ou com `META_FAKE` explícito.
+- [ ] **Invariante de integração passando por vacuidade**: se o código escolher o fake em memória, "o fake Rack não recebeu chamada" passa sempre. Proibir o fake em memória nos specs de integração e ter um controle positivo (um caminho que *deve* chamar o fake Rack).
+- [ ] **Adaptador de jobs contraditório**: `config/application.rb:26` diz `:sidekiq`, `config/environments/production.rb:53` diz `:solid_queue`. Decidir num ADR e ter um spec que confere o adaptador por ambiente.
+- [ ] **Não há como fazer deploy**: não existe `Dockerfile` nem `bin/docker-entrypoint`; `config/deploy.yml` é o padrão do gerador (IP, registry, `SOLID_QUEUE_IN_PUMA`) sem acessórios de Postgres/Redis.
+- [ ] **Banco de staging acumula migrations de branches descartadas**: o reset só reescreve o git. Staging é descartável → recriar o banco a cada deploy de staging (`db:schema:load` + seeds).
+- [ ] **Smoke "contra staging" no Gate 1 testa outro código**: staging contém branches arbitrárias, não o SHA da `main`. Smoke vai para depois do deploy de produção (com rollback), ou para um deploy efêmero do SHA.
+- [ ] **Gates no GitHub Actions precisam ser especificados**: grupo de concurrency da suíte com `cancel-in-progress: true`, do deploy com `false` (não matar `kamal deploy` nem aprovação pendente); deploy via `workflow_run` checando `conclusion == success` e usando `head_sha`; registrar o último SHA verde (tag) para o bisect.
+- [ ] **Rollback não reverte migrations**: exigir migrations expand/contract (compatíveis com a versão anterior).
+
+### Harness (lente do artigo)
+
+- [ ] **Qualidade à esquerda vem primeiro** → nova Fase 0 (ver Próximos passos): o agente roda tudo localmente antes de qualquer CI.
+- [ ] **Steering loop**: `docs/harness/log.md` (ou label `harness` em issues). Regra: o mesmo erro do agente pela segunda vez → novo guia ou sensor, com link. O CLAUDE.md instrui o agente a registrar ali correções feitas pelo humano.
+- [ ] **Aprovação humana onde importa**: check obrigatório `invariants_guard` que, quando o diff toca `spec/invariants/`, `app/models/post.rb` ou os guards de `Asset`, só passa com aprovação num GitHub Environment `invariants` (aprovação do próprio dono funciona lá, ao contrário de review de PR).
+- [ ] **Sensores de manutenibilidade** (categoria ausente): reativar `Metrics/MethodLength`, `AbcSize`, `ClassLength` (o omakase desliga) com limites folgados; `flay` (duplicação) e `debride` (código morto) no `bin/ci`; `rubocop-rspec` para spec sem expectativa.
+- [ ] **Guia de arquitetura**: `docs/architecture.md` — camadas, onde fica lógica de fluxo (controller/model/service/job), e um **harness template** para cliente externo (cliente real + fake Rack + contrato + objetos de valor). Cada regra aponta para o cop/spec que a fiscaliza.
+- [ ] **Coerência**: o cop de HTTP vira "HTTP só em clientes de `app/services/*/`" (o Gemfile já prevê Telegram e clima); README passa a apontar para `spec/invariants/`; **fonte única de fake**: o fake Rack é a referência, o fake em memória deriva dele ou sai.
+- [ ] **`no_direct_assignment` não basta**: bloqueia `state=`/`update(state:)` (e quebra as factories em `spec/factories/core.rb:63-73`), mas não `update_column(s)`, `update_all`, `write_attribute`, nem a escrita direta de `approved_at`/`approved_by`, que é o que o guard checa. O cop precisa cobrir essa família inteira.
+- [ ] **Computacional antes de inferencial**: "teste enfraquecido" (contagem de `it`/`expect` removidos) e "mexeu em invariante" (caminho no diff) viram script no CI; o REVIEW.md fica só com critérios semânticos.
+- [ ] **Juiz de tom calibrado**: 10–20 legendas aprovadas/reprovadas pelo humano como referência.
+- [ ] **Mutation testing no PR, incremental**: `mutant --since origin/main` restrito a `Post` e guards de `Asset` (barato), além do agendado completo.
+- [ ] **Saída de sensor para o LLM**: convenção para toda falha — regra, motivo, correção sugerida, link para o ADR — e formato compacto no `bin/ci` local.
+- [ ] **Harnessability**: RBS/Sorbet só nos clientes externos e objetos de valor.
+
+### Ruleset
+
+- [ ] `strict_required_status_checks_policy: true` — senão dois PRs verdes isolados quebram juntos na `main`. (Merge queue não existe para repositório de conta pessoal.)
+- [ ] Rodar a suíte rápida também em push na `main`.
+- [ ] Exigir o check de testes assim que existir.
+- [ ] "Reimportar" cria um ruleset novo; para atualizar, editar o existente no GitHub (ou `PUT /repos/frfonseca/C3Ads/rulesets/<id>`).
+- [ ] `required_review_thread_resolution` vai exigir resolver as threads do revisor automático — manter consciente.
+
+### Operação
+
+- [ ] Credentials e `RAILS_MASTER_KEY` separados por ambiente (secrets de cada GitHub Environment).
+- [ ] Push em staging executa código não revisado com os secrets de staging — aceito para dev solo, mas staging nunca tem credencial real da Meta.
+- [ ] Estimar custo de dois servidores + registry.
+
 ## Próximos passos
 
-Ordem proposta:
+Ordem revisada após a revisão adversarial:
 
-1. rspec no CI + WebMock travando rede.
-2. `spec/invariants/` com teste exaustivo da state machine e de assets privados, mais proteção contra edição.
-3. Contratos fake × real com VCR.
-4. Validação de termos proibidos no gerador.
-5. Mutant em `Post`.
-6. Teste de ponta a ponta e eval agendado de tom.
+0. **Fase 0 — o agente se verifica localmente**: SessionStart hook (Ruby 3.4.8, bundle, Postgres/Redis, `db:prepare`); `bin/ci` rodando local; hooks do Claude Code (RuboCop no arquivo editado, specs afetados no Stop); CLAUDE.md mínimo com invariantes e link para o log do harness.
+1. **Produção não cai no fake** + decisão do adaptador de jobs (ADR).
+2. **rspec no CI** (rápido em PR e push na `main`), WebMock habilitado, ruleset com `strict` e check de testes.
+3. **Fake da Meta em Rack** como fonte única + primeiro teste de integração do fluxo (outside-in), com controle positivo.
+4. **`spec/invariants/`**: busca exaustiva na state machine, assets privados, cop contra escrita direta de `state`/`approved_*`, `invariants_guard`.
+5. **Sensores de manutenibilidade** e `docs/architecture.md`.
+6. **Validação local da saída do LLM** (schema, termos proibidos).
+7. **Pipeline completa**: Gate 1, mutant incremental, smoke.
+8. **Ambientes** (quando houver servidores): Dockerfile, Kamal staging/produção, banco de staging recriado a cada deploy, Gate 2.
+9. **Com conta Meta de teste**: cassetes VCR e regravação agendada.
 
 ## Decisões em aberto
 
 - Onde rodar o eval de tom (rotina agendada? qual modelo como juiz?).
 - Quem regrava os cassetes VCR e com quais credenciais.
-- Proteção de `spec/invariants/`: só hook local, ou também CODEOWNERS + check no CI.
+- Proteção de `spec/invariants/`: proposta da revisão é o check `invariants_guard` com GitHub Environment de aprovação — confirmar.
+- Adaptador de jobs: Sidekiq ou Solid Queue.

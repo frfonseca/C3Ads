@@ -1,0 +1,5 @@
+<h1>C3Ads</h1>
+<%= form_with url: session_path, method: :post do |f| %>
+  <%= f.password_field :password, placeholder: "Senha" %>
+  <%= f.submit "Entrar" %>
+<% end %>

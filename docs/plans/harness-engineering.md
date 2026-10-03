@@ -136,6 +136,10 @@ Regras:
 - **Gate 1 vermelho para a fila**: corrigir antes de novos merges; achar o culpado com o diagnóstico do teste + `git bisect run` desde o último SHA verde.
 - **`staging` nunca entra em `main`**: check no PR que falha se a branch de origem for `staging`. `staging` não tem proteção contra force push (os scripts reescrevem).
 - **Teste flaky na suíte completa é bug**, não motivo para re-rodar até passar.
+- **`main` só muda por PR** — sem push direto, sem force push, sem apagar a branch, sem exceção para admin. Definido em `.github/rulesets/main.json`:
+  - [ ] Importar no GitHub: *Settings → Rules → Rulesets → New ruleset → Import a ruleset* e escolher o arquivo.
+  - Exige PR (0 aprovações, porque o GitHub não deixa aprovar o próprio PR; a aprovação humana fica no Gate 2), threads de revisão resolvidas e os checks `scan_ruby`, `scan_js`, `lint` e `pr_origin`.
+  - [ ] Ao criar os jobs de teste, adicionar os nomes deles em `required_status_checks` e reimportar.
 
 Ambientes (a criar):
 

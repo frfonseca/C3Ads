@@ -1,0 +1,17 @@
+name: PR guard
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # staging é descartável e reescrita por bin/staging-push e bin/staging-reset:
+  # o conteúdo dela nunca deve entrar em main.
+  pr_origin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recusa PR vindo de staging
+        if: github.head_ref == 'staging'
+        run: |
+          echo "::error::PR a partir de staging não é permitido. Abra o PR a partir da branch de trabalho."
+          exit 1

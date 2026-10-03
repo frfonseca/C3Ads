@@ -149,6 +149,24 @@ usado pelo cliente real, pelo fake e pelos testes.
 7. [ ] **Defesa em runtime** (o contrato pode mudar sem aviso): validar resposta e falhar alto com o payload no log; consultar `publishing_limit` antes de publicar; idempotência — guardar `container_id` antes de `media_publish` para retry não postar duas vezes.
 8. [ ] **LLM**: validação local da saída (JSON Schema + checagens semânticas + termos proibidos), aplicada também ao fake; cassetes por provedor (Anthropic, Gemini, OpenAI) para o caminho do `ruby_llm`; testes de contrato do uso da biblioteca para que bumps do Dependabot sejam barrados se quebrarem.
 
+### Enquanto não há conta de teste da Meta
+
+Situação em 2026-10-03: nenhuma conta Meta de teste/sandbox criada ainda.
+
+Dá para fazer agora, sem credencial:
+
+- [ ] Itens 1, 2, 4, 7 e 8 (validação local da saída do LLM) da estratégia acima.
+- [ ] Fixtures provisórias a partir dos exemplos de resposta da documentação da Meta, marcadas como `fonte: documentação` — confiança menor, substituídas por cassetes gravados quando a conta existir.
+
+Bloqueado até ter conta: itens 3 (cassetes reais) e 5 (regravação periódica).
+
+Preparar a conta (os nomes de menu da Meta mudam; conferir na hora):
+
+- [ ] Conta de desenvolvedor Meta e um app do tipo Business.
+- [ ] **Conta Instagram profissional separada, só para teste**, ligada a uma Página do Facebook de teste. Em modo de desenvolvimento a publicação é real — não usar as contas do imóvel nem da lavanderia.
+- [ ] Ad account sandbox da Marketing API (anúncios não são veiculados e não geram gasto).
+- [ ] Token de longa duração guardado como secret do ambiente, nunca no repositório.
+
 ## Próximos passos
 
 Ordem proposta:

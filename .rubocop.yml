@@ -6,3 +6,11 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
+
+# O perfil omakase cobre só estilo. Lint pega bugs reais (método duplicado,
+# variável não usada, condição sempre verdadeira) — sensor barato para agentes.
+Lint:
+  Enabled: true
+
+AllCops:
+  NewCops: enable

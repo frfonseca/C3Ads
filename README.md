@@ -19,6 +19,7 @@ da Fase 4 o sistema já resolve o problema de ponta a ponta.
 
 | Fase | Entrega |
 |---|---|
+| 0 | Harness: esqueleto Rails, `bin/ci`, CLAUDE.md, specs, hooks |
 | 1 | Fundação, modelos, invariante de aprovação |
 | 2 | Geração via LLM (Claude, Gemini, OpenAI), aba Marca |
 | 3 | Fila de aprovação, exportação manual |
@@ -28,3 +29,15 @@ da Fase 4 o sistema já resolve o problema de ponta a ponta.
 | 7 | Slideshow em vídeo |
 | 8 | Gatilhos: clima, agenda, manual |
 | 9 | Anúncios pagos com restrições de imóvel |
+
+## Desenvolvimento
+
+Ruby 3.3.6, Rails 8.1, PostgreSQL 16.
+
+```sh
+bin/setup   # gems, banco e servidor
+bin/ci      # lint, auditorias de segurança e testes — o portão de todo PR
+```
+
+Para agentes de código: `CLAUDE.md`. Specs das fases em `docs/fases/`,
+decisões em `docs/adr/`.

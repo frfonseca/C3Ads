@@ -10,3 +10,12 @@
 /node_modules
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Segredos — nunca versionar
+/config/*.key
+.env*
+!.env.example
+
+/tmp/storage/*
+!/tmp/storage/.keep
+/coverage

@@ -133,6 +133,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["post_id"], name: "index_destinations_on_post_id"
   end
 
+  create_table "generation_costs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "input_tokens"
+    t.string "model"
+    t.integer "output_tokens"
+    t.bigint "post_id"
+    t.bigint "project_id", null: false
+    t.string "provider"
+    t.datetime "updated_at", null: false
+    t.decimal "usd", precision: 10, scale: 5, default: "0.0"
+    t.index ["post_id"], name: "index_generation_costs_on_post_id"
+    t.index ["project_id", "created_at"], name: "index_generation_costs_on_project_id_and_created_at"
+    t.index ["project_id"], name: "index_generation_costs_on_project_id"
+  end
+
   create_table "landing_media", force: :cascade do |t|
     t.bigint "asset_id", null: false
     t.datetime "created_at", null: false
@@ -304,6 +319,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
     t.index ["slug"], name: "index_short_links_on_slug", unique: true
   end
 
+  create_table "system_alerts", force: :cascade do |t|
+    t.jsonb "context"
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.text "message", null: false
+    t.datetime "notified_at"
+    t.datetime "resolved_at"
+    t.string "severity", default: "warning", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind", "resolved_at"], name: "index_system_alerts_on_kind_and_resolved_at"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "asset_collection_memberships", "asset_collections"
@@ -316,6 +343,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_010550) do
   add_foreign_key "brands", "projects"
   add_foreign_key "destinations", "landing_pages"
   add_foreign_key "destinations", "posts"
+  add_foreign_key "generation_costs", "posts"
+  add_foreign_key "generation_costs", "projects"
   add_foreign_key "landing_media", "assets"
   add_foreign_key "landing_media", "landing_pages"
   add_foreign_key "landing_pages", "posts"

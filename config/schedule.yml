@@ -1,0 +1,15 @@
+# Jobs recorrentes (sidekiq-cron). Horários em America/Sao_Paulo.
+refresh_meta_token:
+  cron: "0 3 * * *"
+  class: RefreshMetaTokenJob
+  description: "Renova o token da Meta antes de vencer — a falha mais silenciosa do sistema"
+
+sync_post_metrics:
+  cron: "0 9 * * *"
+  class: SyncPostMetricsJob
+  description: "Lê alcance, curtidas e salvamentos dos posts publicados"
+
+anonymize_stale_leads:
+  cron: "30 4 * * *"
+  class: AnonymizeStaleLeadsJob
+  description: "Retenção LGPD: apaga PII de leads parados há 12 meses"

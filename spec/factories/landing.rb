@@ -39,3 +39,12 @@ FactoryBot.define do
     consent_at { Time.current }
   end
 end
+
+FactoryBot.define do
+  factory :generation_cost do
+    project
+    provider { "anthropic" }
+    model { "claude-opus-5" }
+    usd { 0.02 }
+  end
+end

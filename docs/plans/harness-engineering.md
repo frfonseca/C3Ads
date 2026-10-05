@@ -235,6 +235,61 @@ Preparar a conta (os nomes de menu da Meta mudam; conferir na hora):
 - [ ] Ad account sandbox da Marketing API (anúncios não são veiculados e não geram gasto).
 - [ ] Token de longa duração guardado como secret do ambiente, nunca no repositório.
 
+## Cruzamento: "Harness Engineering: explicado desde cero" (2026-10-05)
+
+Fonte: artigo de @santtiagom_ no X (x.com/i/article/2098782814837543075). O X é
+bloqueado no ambiente de nuvem; os pontos abaixo vêm de trechos obtidos por
+busca, não do texto completo.
+
+O que o artigo acrescenta ao modelo de guias e sensores:
+
+- **Agente = modelo + harness.** O harness monta o que o modelo lê, interpreta
+  a resposta, executa as ações pedidas, guarda o que aconteceu e **decide
+  quando a tarefa terminou**. O modelo só pede; o harness faz.
+- **Três camadas**: prompt engineering (a mensagem), context engineering (o
+  que entra na janela), harness engineering (loop, ferramentas, permissões,
+  verificação, orquestração).
+- **Peças**: skills (contexto organizado, carregado sob demanda), MCP
+  (ferramentas), subagentes (loops coordenados), memória.
+- **AGENTS.md como índice de ~100 linhas** apontando para docs — o AGENTS.md
+  gigante da OpenAI piorou o agente.
+- Ganhos grandes vêm do harness sem trocar de modelo (LangChain no Terminal
+  Bench 2.0).
+
+Lacunas do plano reveladas pelo cruzamento:
+
+- [ ] **Permissões do agente** (ausente no plano): `.claude/settings.json` com
+  *deny* para `git push` em `main`, `kamal deploy` de produção,
+  `rails credentials:edit`, leitura/escrita de `config/master.key`,
+  `.kamal/secrets` e `.env*`; *allow* para os comandos seguros do dia a dia
+  (`bin/ci`, `bin/rspec`, `bin/rubocop`, `bin/staging-push`). O ruleset protege
+  o servidor; as permissões protegem a máquina e os segredos.
+- [ ] **"Decidir quando terminou" é do harness**: hook `Stop` que impede o
+  agente de encerrar com `bin/ci` (rápido) vermelho, em vez de só rodar e
+  mostrar o resultado.
+- [ ] **Orçamento de contexto**: CLAUDE.md com limite de ~100 linhas (checado no
+  CI), só índice + invariantes + comandos; o resto em `docs/` e skills.
+- [ ] **Skills do projeto** (contexto sob demanda), por exemplo:
+  `novo-cliente-externo` (o harness template: cliente + fake Rack + contrato +
+  objetos de valor), `nova-invariante`, `staging` (quando usar push, replace,
+  reset), `release` (Gate 1 → Gate 2).
+- [ ] **Ferramentas para o agente observar o sistema**: comandos com saída
+  curta e legível por máquina — o que o fake da Meta recebeu, histórico de
+  estados de um post, últimos jobs com erro. Avaliar MCP só se um comando
+  `bin/` não bastar.
+- [ ] **Subagentes com papéis separados**:
+  - *autor de testes* que recebe só a especificação (não a implementação)
+    para escrever o teste de integração antes — ataca o risco de teste
+    tautológico apontado na revisão adversarial;
+  - *revisor adversarial* com REVIEW.md antes de abrir PR (como foi feito
+    neste plano).
+- [ ] **Memória entre sessões**: os containers de nuvem são descartáveis. O
+  que sobrevive é o repositório — `docs/plans/` (estado do trabalho),
+  `docs/decisions/` (porquês), `docs/harness/log.md` (erros recorrentes). O
+  CLAUDE.md manda o agente ler e atualizar esses arquivos.
+- [ ] **Medir o harness**: quando mudar guia/sensor, ver se o erro que motivou
+  a mudança deixou de aparecer (entrada correspondente no log do harness).
+
 ## Revisão adversarial (2026-10-03)
 
 Dois revisores: um pela lente do artigo, outro pela viabilidade. Achados
